@@ -1168,7 +1168,4 @@ int main() {
     //CXX14::main();
     //Tree::main();
     //FizzBuzz::fizz_buzz(100);
-
-
-    std::string s{"I am a string! Yay! Everyone's happy!"};
 }
