@@ -11,6 +11,7 @@
 #include <vector>
 #include <string>
 #include <algorithm>
+#include <regex>
 
 namespace ConstReferenceToTemporary {
     std::string foo() {
@@ -154,7 +155,7 @@ namespace ValueCategories {
     T& same_object(T& ref) {
         return ref;
     }
-    
+
     template<typename T>
     T make_copy(const T& val) {
         return val;
@@ -900,7 +901,7 @@ namespace ConstructorThrows {
     }
 }
 
-namespace ImplicitConversionTurnedTemplateMadness {
+namespace TemplateMadness {
     template<typename T>
     struct Complex {
         static_assert(std::is_arithmetic<T>::value, "T must be arithmetic");
@@ -1102,32 +1103,72 @@ namespace StaticAssert {
     }
 }
 
+namespace Replace {
+    // Replace "bats" with "mice"
+    const std::string the_string{"Do bats eat cats? Do cats eat bats?"};
+
+    template<typename BasicString> // requires a std::basic_string<...>
+    void replace(BasicString& str, const BasicString& target, const BasicString& replacement) {
+        using size_type = typename BasicString::size_type;
+
+        const size_type tlen = target.length();
+        const size_type rlen = replacement.length();
+
+        size_type pos = {};
+
+        while ((pos = str.find(target, pos)) != BasicString::npos) {
+            str.replace(pos, tlen, replacement);
+            pos += rlen;
+        }
+    }
+
+    template<typename BasicString>
+    BasicString replace(const BasicString& str, const BasicString& target, const BasicString& replacement) {
+        BasicString result{str};
+        replace(result, target, replacement);
+        return result;
+    }
+
+    void main() {
+        //std::string s{the_string};
+        //std::regex_replace(s.begin(), s.begin(), s.end(), std::regex("bats"), "mice");
+
+        using namespace std::string_literals;
+
+        std::cout << replace(the_string, "bats"s, "mice"s) << '\n';
+    }
+}
+
 int main() {
-    ExplicitConversion::main();
-    ADL::main();
-    ImplicitConversionTurnedTemplateMadness::main();
-    ConstructorThrows::main();
-    InitializerList::main();
-    OOP::main();
-    CallingConventions::main();
-    ConstReferenceToTemporary::main();
-    Assertions::main();
-    InitializerLists::main();
-    Templates::main();
-    SmartPointers::main();
-    Lambdas::main();
-    Random::main();
-    ValueCategories::main();
-    Madness::main();
-    GoTo::main();
-    Typeid::main();
-    OOFail::main();
-    LambdaFail::main();
-    PointerToTemporaryFail::main();
-    DuffsDevice::main();
-    Tie::main();
-    CPlusPlusMacro::main();
-    CXX14::main();
-    Tree::main();
-    FizzBuzz::fizz_buzz(100);
+    Replace::main();
+    //ADL::main();
+    //ExplicitConversion::main();
+    //TemplateMadness::main();
+    //ConstructorThrows::main();
+    //InitializerList::main();
+    //OOP::main();
+    //CallingConventions::main();
+    //ConstReferenceToTemporary::main();
+    //Assertions::main();
+    //InitializerLists::main();
+    //Templates::main();
+    //SmartPointers::main();
+    //Lambdas::main();
+    //Random::main();
+    //ValueCategories::main();
+    //Madness::main();
+    //GoTo::main();
+    //Typeid::main();
+    //OOFail::main();
+    //LambdaFail::main();
+    //PointerToTemporaryFail::main();
+    //DuffsDevice::main();
+    //Tie::main();
+    //CPlusPlusMacro::main();
+    //CXX14::main();
+    //Tree::main();
+    //FizzBuzz::fizz_buzz(100);
+
+
+    std::string s{"I am a string! Yay! Everyone's happy!"};
 }
