@@ -6,21 +6,21 @@
 
 namespace TCXXPL {
     // What am I doing?
-    class String {
+    class StupidString {
     public:
-        String(const char* str);
+        StupidString(const char* str);
         
-        String(const String& rhs);
-        String& operator=(const String& rhs);
+        StupidString(const StupidString& rhs);
+        StupidString& operator=(const StupidString& rhs);
 
-        String(String&& rhs) noexcept;
-        String& operator=(String&& rhs) noexcept;
+        StupidString(StupidString&& rhs) noexcept;
+        StupidString& operator=(StupidString&& rhs) noexcept;
 
         size_t length() const;
 
         char operator[](size_t pos) const;
 
-        ~String();
+        ~StupidString();
 
     private:
         static constexpr size_t short_limit = 16;
@@ -29,14 +29,14 @@ namespace TCXXPL {
         char* data;
         char short_data[short_limit];
 
-        void copy_construct(const String& rhs) noexcept;
-        void move_construct(String& rhs) noexcept;
+        void copy_construct(const StupidString& rhs) noexcept;
+        void move_construct(StupidString& rhs) noexcept;
     };
 
-    bool operator==(const String& l, const String& r);
-    bool operator!=(const String& l, const String& r);
+    bool operator==(const StupidString& l, const StupidString& r);
+    bool operator!=(const StupidString& l, const StupidString& r);
 
-    std::ostream& operator<<(std::ostream& os, const String& s);
+    std::ostream& operator<<(std::ostream& os, const StupidString& s);
 }
 
 #endif // TCXXPL_STRING_H

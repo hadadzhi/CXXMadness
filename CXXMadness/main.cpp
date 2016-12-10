@@ -1148,13 +1148,13 @@ namespace StringTest {
         
         const char* test_string{"I am a string! Yay!"};
 
-        String s1{test_string};
-        String s2{s1};
+        StupidString s1{test_string};
+        StupidString s2{s1};
 
         assert(s1 == s2);
         assert(s1 == test_string);
 
-        String s3{std::move(s2)};
+        StupidString s3{std::move(s2)};
         
         assert(s1 == s3);
 

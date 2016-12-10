@@ -3,51 +3,51 @@
 #include <iostream>
 
 namespace TCXXPL {
-    String::String(const char* str) {
+    StupidString::StupidString(const char* str) {
         size = std::strlen(str);
         data = size > short_limit ? new char[size] : short_data;
         std::memcpy(data, str, size);
     }
 
-    String::String(const String& rhs) {
+    StupidString::StupidString(const StupidString& rhs) {
         copy_construct(rhs);
     }
 
-    String& String::operator=(const String& rhs) {
+    StupidString& StupidString::operator=(const StupidString& rhs) {
         if (this != &rhs) {
-            this->~String();
+            this->~StupidString();
             copy_construct(rhs);
         }
         return *this;
     }
 
-    String::String(String&& rhs) noexcept {
+    StupidString::StupidString(StupidString&& rhs) noexcept {
         move_construct(rhs);
     }
 
-    String& String::operator=(String&& rhs) noexcept {
+    StupidString& StupidString::operator=(StupidString&& rhs) noexcept {
         if (this != &rhs) {
-            this->~String();
+            this->~StupidString();
             move_construct(rhs);
         }
         return *this;
     }
 
-    size_t String::length() const {
+    size_t StupidString::length() const {
         return size;
     }
 
-    char String::operator[](size_t pos) const {
+    char StupidString::operator[](size_t pos) const {
         return data[pos];
     }
 
-    String::~String() {
+    StupidString::~StupidString() {
         if (data && size > short_limit) {
             delete[] data;
         }
     }
     
-    void String::copy_construct(const String& rhs) noexcept {
+    void StupidString::copy_construct(const StupidString& rhs) noexcept {
         if (rhs.size > short_limit) {
             size = rhs.size;
             data = new char[size];
@@ -57,7 +57,7 @@ namespace TCXXPL {
         }
     }
 
-    void String::move_construct(String& rhs) noexcept {
+    void StupidString::move_construct(StupidString& rhs) noexcept {
         if (rhs.size > short_limit) {
             size = rhs.size;
             data = rhs.data;
@@ -68,7 +68,7 @@ namespace TCXXPL {
         rhs.data = nullptr;
     }
 
-    bool operator==(const String& l, const String& r) {
+    bool operator==(const StupidString& l, const StupidString& r) {
         if (&l == &r) {
             return true;
         }
@@ -86,11 +86,11 @@ namespace TCXXPL {
         return false;
     }
 
-    bool operator!=(const String& l, const String& r) {
+    bool operator!=(const StupidString& l, const StupidString& r) {
         return !(l == r);
     }
 
-    std::ostream& operator<<(std::ostream &os, const String& s) {
+    std::ostream& operator<<(std::ostream &os, const StupidString& s) {
         for (size_t p{}, l{s.length()}; p < l; ++p) {
             os << s[p];
         }
