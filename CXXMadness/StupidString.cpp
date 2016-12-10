@@ -1,6 +1,7 @@
-#include "String.h"
-#include <cstring>
+#include "StupidString.h"
+
 #include <iostream>
+#include <cstring>
 
 namespace TCXXPL {
     StupidString::StupidString(const char* str) {

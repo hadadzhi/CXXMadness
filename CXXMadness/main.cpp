@@ -12,8 +12,9 @@
 #include <string>
 #include <algorithm>
 #include <regex>
-#include "String.h"
 #include <sstream>
+
+#include "StupidString.h"
 
 namespace ConstReferenceToTemporary {
     std::string foo() {

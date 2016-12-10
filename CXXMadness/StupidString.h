@@ -1,5 +1,5 @@
-#ifndef TCXXPL_STRING_H
-#define TCXXPL_STRING_H
+#ifndef TCXXPL_STUPIDSTRING_H
+#define TCXXPL_STUPIDSTRING_H
 
 #include <cstddef>
 #include <iostream>
@@ -39,4 +39,4 @@ namespace TCXXPL {
     std::ostream& operator<<(std::ostream& os, const StupidString& s);
 }
 
-#endif // TCXXPL_STRING_H
+#endif // TCXXPL_STUPIDSTRING_H
