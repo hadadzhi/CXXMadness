@@ -12,6 +12,8 @@
 #include <string>
 #include <algorithm>
 #include <regex>
+#include "String.h"
+#include <sstream>
 
 namespace ConstReferenceToTemporary {
     std::string foo() {
@@ -1140,8 +1142,36 @@ namespace Replace {
     }
 }
 
+namespace StringTest {
+    void main() {
+        using namespace TCXXPL;
+        
+        const char* test_string{"I am a string! Yay!"};
+
+        String s1{test_string};
+        String s2{s1};
+
+        assert(s1 == s2);
+        assert(s1 == test_string);
+
+        String s3{std::move(s2)};
+        
+        assert(s1 == s3);
+
+        s2 = "I am another string. I am here for testing! Whoohoo!";
+
+        assert(s2 != s1);
+
+        std::cout << s2 << '\n';
+
+        std::stringstream sstream;
+        sstream << s2;
+        std::cout << sstream.str() << '\n';
+    }
+}
+
 int main() {
-    Replace::main();
+    //Replace::main();
     //ADL::main();
     //ExplicitConversion::main();
     //TemplateMadness::main();
@@ -1169,4 +1199,5 @@ int main() {
     //CXX14::main();
     //Tree::main();
     //FizzBuzz::fizz_buzz(100);
+    StringTest::main();
 }
