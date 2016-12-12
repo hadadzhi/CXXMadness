@@ -58,7 +58,7 @@ namespace Templates {
 
         if (!(stream << source) || // Write source as a string
             !(stream >> result) || // Read result from a string
-            !(stream >> std::ws).eof()) { // Discard whitespace and check if stream still has content
+            !(std::ws(stream)).eof()) { // Discard whitespace and check if stream still has content
             throw std::runtime_error("conversion failed");
         }
 
@@ -1171,7 +1171,53 @@ namespace StringTest {
     }
 }
 
+namespace DefaultDtor {
+    class Foo {
+    public:
+        Foo() {
+            std::cout << "Foo constructed\n";
+        }
+        ~Foo() {
+            std::cout << "Foo died\n";
+        }
+    };
+
+    class Bar1 {
+        Foo foo;
+    public:
+        Bar1() {}
+        ~Bar1() {
+            std::cout << "Bar's destructor does something...\n";
+        }
+    };
+
+    class Bar2 {
+        Foo foo;
+    public:
+        Bar2() {}
+        ~Bar2() = default;
+    };
+
+    class Bar3 {
+        Foo foo;
+    public:
+        Bar3() {}
+
+        Bar3(Bar3&&) {}
+        Bar3& operator=(Bar3&&) {}
+    };
+
+    void main() {
+        Bar1 bar1;
+        Bar2 bar2;
+        Bar3 bar3;
+        //Bar3 bar3_1;
+        //bar3 = bar3_1;
+    }
+}
+
 int main() {
+    DefaultDtor::main();
     //Replace::main();
     //ADL::main();
     //ExplicitConversion::main();
@@ -1200,5 +1246,5 @@ int main() {
     //CXX14::main();
     //Tree::main();
     //FizzBuzz::fizz_buzz(100);
-    StringTest::main();
+    //StringTest::main();
 }
