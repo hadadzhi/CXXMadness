@@ -580,7 +580,7 @@ namespace CXX14 {
 
 //#define PAIN_AND_SUFFERING
 #ifdef PAIN_AND_SUFFERING
-// This is why we should use "Clang with Microsoft CodeGen" for debug
+// Here is one reason the use "Clang with Microsoft CodeGen" for debug
 namespace PortabilityIsFun {
     template<typename T>
     struct S {
@@ -1204,7 +1204,11 @@ namespace DefaultDtor {
         Bar3() {}
 
         Bar3(Bar3&&) {}
-        Bar3& operator=(Bar3&&) {}
+        // BTW, it doesn't bother Clang that a function that
+        // must return a value, does not return a value.
+        // MSVC refuses to compile this
+        //Bar3& operator=(Bar3&&) {} 
+        Bar3& operator=(Bar3&&) { return *this; }
     };
 
     void main() {
@@ -1216,7 +1220,27 @@ namespace DefaultDtor {
     }
 }
 
+namespace UserDefinedLiterals {
+    // Integral literals are always unsigned
+    long long operator""_km(unsigned long long lv) {
+        assert(lv < std::numeric_limits<long long>::max());
+        std::cout << "Value of the literal = " << lv << '\n';
+        return lv;
+    }
+
+    void main() {
+        // '-' before the literal is always a unary minus operator
+        std::cout << -12345678912345678912_km << '\n';
+
+        // BTW, this will print the wrong number:
+        // built-in literals are also unsigned,
+        // and implicit unsigned -> signed conversion yields the wrong result
+        std::cout << -12345678912345678912LL << '\n';
+    }
+}
+
 int main() {
+    //UserDefinedLiterals::main();
     DefaultDtor::main();
     //Replace::main();
     //ADL::main();
