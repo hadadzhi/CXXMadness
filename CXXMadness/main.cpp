@@ -1221,7 +1221,7 @@ namespace DefaultDtor {
 }
 
 namespace UserDefinedLiterals {
-    // Integral literals are always unsigned
+    // Integral literals are always unsigned -- '-' is not part of the literal
     long long operator""_km(unsigned long long lv) {
         assert(lv < std::numeric_limits<long long>::max());
         std::cout << "Value of the literal = " << lv << '\n';
@@ -1229,19 +1229,17 @@ namespace UserDefinedLiterals {
     }
 
     void main() {
-        // '-' before the literal is always a unary minus operator
-        std::cout << -12345678912345678912_km << '\n';
+        // '-' before the literal is a unary minus operator
+        std::cout << -0xFF'FF'FF'FF'FF'FF'FF'FF_km << '\n';
 
-        // BTW, this will print the wrong number:
-        // built-in literals are also unsigned,
-        // and implicit unsigned -> signed conversion yields the wrong result
-        std::cout << -12345678912345678912LL << '\n';
+        // implicit unsigned -> signed conversion yields the wrong result
+        std::cout << -0xFF'FF'FF'FF'FF'FF'FF'FFULL << '\n';
     }
 }
 
 int main() {
-    //UserDefinedLiterals::main();
-    DefaultDtor::main();
+    UserDefinedLiterals::main();
+    //DefaultDtor::main();
     //Replace::main();
     //ADL::main();
     //ExplicitConversion::main();
