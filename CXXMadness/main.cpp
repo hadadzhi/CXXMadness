@@ -1234,11 +1234,30 @@ namespace UserDefinedLiterals {
 
         // implicit unsigned -> signed conversion yields the wrong result
         std::cout << -0xFF'FF'FF'FF'FF'FF'FF'FFULL << '\n';
+
+        // another funny implicit conversion
+        std::cout << std::boolalpha << (1U < -1) << '\n'; // prints "true"
+    }
+}
+
+namespace Whaa {
+    template<typename F>
+    auto dirac_delta(const F& f) {
+        return f(0);
+    }
+
+    double f(double x) {
+        return std::exp(x);
+    }
+
+    void main() {
+        std::cout << dirac_delta(f) << '\n';
     }
 }
 
 int main() {
-    UserDefinedLiterals::main();
+    Whaa::main();
+    //UserDefinedLiterals::main();
     //DefaultDtor::main();
     //Replace::main();
     //ADL::main();
