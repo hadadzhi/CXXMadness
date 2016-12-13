@@ -30,9 +30,9 @@ namespace ConstReferenceToTemporary {
 namespace Assertions {
     void main() {
 
-#if false
+        #if false
         static_assert(false, "This sentence is false");
-#endif
+        #endif
 
     }
 }
@@ -406,20 +406,18 @@ namespace DuffsDevice {
     void count_down(int count) {
         assert(count > 0 && "Count <= 0");
         int n = (count + 7) / 8;
-        // @formatter:off
         switch (count % 8) {
-            case 0: do {
-                std::cout << count-- << ' ';
-            case 7:      std::cout << count-- << ' ';
-            case 6:      std::cout << count-- << ' ';
-            case 5:      std::cout << count-- << ' ';
-            case 4:      std::cout << count-- << ' ';
-            case 3:      std::cout << count-- << ' ';
-            case 2:      std::cout << count-- << ' ';
-            case 1:      std::cout << count-- << ' ';
+            do {
+            case 0: std::cout << count-- << ' ';
+            case 7: std::cout << count-- << ' ';
+            case 6: std::cout << count-- << ' ';
+            case 5: std::cout << count-- << ' ';
+            case 4: std::cout << count-- << ' ';
+            case 3: std::cout << count-- << ' ';
+            case 2: std::cout << count-- << ' ';
+            case 1: std::cout << count-- << ' ';
             } while (--n > 0);
         }
-        // @formatter:on
     }
 
     void main() {
@@ -1146,7 +1144,7 @@ namespace Replace {
 namespace StringTest {
     void main() {
         using namespace TCXXPL;
-        
+
         const char* test_string{"I am a string! Yay!"};
 
         StupidString s1{test_string};
@@ -1156,7 +1154,7 @@ namespace StringTest {
         assert(s1 == test_string);
 
         StupidString s3{std::move(s2)};
-        
+
         assert(s1 == s3);
 
         s2 = "I am another string. I am here for testing! Whoohoo!";
@@ -1255,8 +1253,29 @@ namespace Whaa {
     }
 }
 
+namespace Predefined {
+    void main() {
+        std::cout << "Standard:\n";
+
+        std::cout << "__FILE__ = " << __FILE__ << '\n';
+        std::cout << "__LINE__ = " << __LINE__ << '\n';
+        std::cout << "__func__ = " << __func__ << '\n';
+
+        std::cout << "Non-standard:\n";
+
+        #ifdef __PRETTY_FUNCTION__
+        std::cout << "__PRETTY_FUNCTION__ = " << __PRETTY_FUNCTION__ << '\n';
+        #endif
+
+        #ifdef __FUNCTION__
+        std::cout << "__FUNCTION__ = " << __FUNCTION__ << '\n';
+        #endif
+    }
+}
+
 int main() {
-    Whaa::main();
+    //Predefined::main();
+    //Whaa::main();
     //UserDefinedLiterals::main();
     //DefaultDtor::main();
     //Replace::main();
@@ -1281,7 +1300,7 @@ int main() {
     //OOFail::main();
     //LambdaFail::main();
     //PointerToTemporaryFail::main();
-    //DuffsDevice::main();
+    DuffsDevice::main();
     //Tie::main();
     //CPlusPlusMacro::main();
     //CXX14::main();
