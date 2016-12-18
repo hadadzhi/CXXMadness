@@ -76,7 +76,7 @@ namespace TCXXPL {
 
         if (l.length() == r.length()) {
             size_t len{r.length()};
-            for (size_t pos{}; pos < len; ++pos) {
+            for (size_t pos{0}; pos < len; ++pos) {
                 if (l[pos] != r[pos]) {
                     return false;
                 }
@@ -92,7 +92,7 @@ namespace TCXXPL {
     }
 
     std::ostream& operator<<(std::ostream &os, const StupidString& s) {
-        for (size_t p{}, l{s.length()}; p < l; ++p) {
+        for (size_t p{0}, l{s.length()}; p < l; ++p) {
             os << s[p];
         }
         return os;

@@ -13,6 +13,8 @@
 #include <algorithm>
 #include <regex>
 #include <sstream>
+#include <atomic>
+#include <future>
 
 #include "StupidString.h"
 
@@ -1116,7 +1118,7 @@ namespace Replace {
         const size_type tlen = target.length();
         const size_type rlen = replacement.length();
 
-        size_type pos = {};
+        size_type pos{0};
 
         while ((pos = str.find(target, pos)) != BasicString::npos) {
             str.replace(pos, tlen, replacement);
@@ -1239,8 +1241,8 @@ namespace UserDefinedLiterals {
 }
 
 namespace Whaa {
-    template<typename F>
-    auto dirac_delta(const F& f) {
+    template<typename Func>
+    auto dirac_delta(const Func& f) {
         return f(0);
     }
 
@@ -1273,7 +1275,106 @@ namespace Predefined {
     }
 }
 
-int main() {
+namespace Threads {
+    constexpr int count_to{1'000'000'000};
+    constexpr int num_threads{8};
+    constexpr int thread_count_to{count_to / num_threads};
+
+    void count_st() {
+        auto count = std::make_unique<int>(0);
+
+        for (int i{0}; i < count_to; ++i) {
+            ++*count;
+        }
+
+        std::cout << "Counted to " << *count << " using 1 thread!\n";
+    }
+
+    void count_st_async() {
+        auto count = std::make_unique<int>(0);
+        auto f = std::async([](int* count_ptr) {
+            for (int i{0}; i < count_to; ++i) {
+                ++*count_ptr;
+            }
+        }, count.get());
+
+        f.wait();
+
+        std::cout << "Counted to " << *count << " using 1 async thread!\n";
+    }
+
+    template<typename Func, typename... ArgTypes>
+    void run_and_wait(const int num_threads, Func&& func, ArgTypes&&... args) {
+        std::vector<std::future<void>> fs;
+
+        for (int i{0}; i < num_threads; ++i) {
+            fs.push_back(std::async(std::forward<Func>(func),
+                                    std::forward<ArgTypes>(args)...));
+        }
+
+        for (const auto& f : fs) {
+            f.wait();
+        }
+    }
+
+    void count_mt_atomic() {
+        auto count = std::make_unique<std::atomic_int>(0);
+        auto counter_lambda = [](std::atomic_int* count_ptr) {
+            for (int i{0}; i < thread_count_to; ++i) {
+                ++*count_ptr;
+            }
+        };
+
+        run_and_wait(num_threads, counter_lambda, count.get());
+
+        std::cout << "Counted to " << *count << " using " << num_threads << " threads and an atomic variable!\n";
+    }
+
+    void count_mt_lock() {
+        auto count = std::make_unique<int>(0);
+        auto lock = std::make_unique<std::mutex>();
+        auto counter_lambda = [](int* count_ptr, std::mutex* lock_ptr) {
+            for (int i{0}; i < thread_count_to; ++i) {
+                std::lock_guard<std::mutex> lg{*lock_ptr};
+                ++*count_ptr;
+            }
+        };
+
+        run_and_wait(num_threads, counter_lambda, count.get(), lock.get());
+
+        std::cout << "Counted to " << *count << " using " << num_threads << " threads and a normal variable guarded by a lock!\n";
+    }
+
+    void main(const int argc, const char* argv[]) {
+        auto print_error = []() { std::cout << "Bad args\n"; };
+
+        if (argc != 2) {
+            print_error();
+            return;
+        }
+
+        switch (std::atoi(argv[1])) {
+            case 1:
+                count_st();
+                break;
+            case 2:
+                count_st_async();
+                break;
+            case 3:
+                count_mt_atomic();
+                break;
+            case 4:
+                count_mt_lock();
+                break;
+            default:
+                print_error();
+                return;
+        }
+    }
+}
+
+int main(const int argc, const char* argv[]) {
+    Threads::main(argc, argv);
     //Predefined::main();
     //Whaa::main();
     //UserDefinedLiterals::main();
@@ -1300,7 +1401,7 @@ int main() {
     //OOFail::main();
     //LambdaFail::main();
     //PointerToTemporaryFail::main();
-    DuffsDevice::main();
+    //DuffsDevice::main();
     //Tie::main();
     //CPlusPlusMacro::main();
     //CXX14::main();
