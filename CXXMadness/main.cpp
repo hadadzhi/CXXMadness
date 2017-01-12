@@ -721,8 +721,8 @@ namespace CallingConventions {
     }
 
     void main() {
-        const float r1 = sfoo(3.14, 42);
-        const float r2 = cfoo(3.14, 42);
+        const float r1 = sfoo(3.14f, 42);
+        const float r2 = cfoo(3.14f, 42);
     }
 }
 
