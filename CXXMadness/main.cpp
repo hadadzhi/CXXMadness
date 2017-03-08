@@ -507,9 +507,9 @@ namespace CXX14 {
         std::cout << '\n';
     }
 
-    // This is needed to avoid an extra ' ' at the end of line
-    // AHTUNG: needs to be declared !before! the main variadic function
-    //         otherwise the 'void println()' overload takes over
+    // This is needed to avoid an extra ' ' at the end of the line
+    // AHTUNG: must be declared !before! the main variadic template function,
+    //         otherwise, the 'void println()' overload takes over
     template<typename Head>
     void println(const Head& first) {
         std::cout << first << '\n';
