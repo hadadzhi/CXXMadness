@@ -1308,8 +1308,7 @@ namespace Threads {
         std::vector<std::future<void>> fs;
 
         for (int i{0}; i < num_threads; ++i) {
-            fs.push_back(std::async(std::forward<Func>(func),
-                                    std::forward<ArgTypes>(args)...));
+            fs.push_back(std::async(std::forward<Func>(func), std::forward<ArgTypes>(args)...));
         }
 
         for (const auto& f : fs) {
