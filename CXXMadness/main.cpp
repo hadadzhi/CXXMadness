@@ -1372,39 +1372,120 @@ namespace Threads {
     }
 }
 
+namespace Quicksort {
+    template <typename E>
+    void swap(E& a, E& b) {
+        const E t = std::move(a);
+        a = std::move(b);
+        b = std::move(t);
+    }
+
+    template <typename Container>
+    int hoare_partition(Container& a, int start, int end) {
+        assert(start < end);
+
+        const auto pivot = a[start + ((end - start) >> 1)];
+
+        --start;
+        ++end;
+        while (true) {
+            while (a[++start] < pivot);
+            while (a[--end] > pivot);
+            if (start >= end) {
+                return end;
+            }
+            swap(a[start], a[end]);
+        }
+    }
+
+    template <typename Container>
+    void quicksort(Container& a, const int start, const int end) {
+        const int length = end - start + 1;
+
+        if (length < 2) {
+            return;
+        }
+
+        if (length == 2) {
+            if (a[start] > a[end]) {
+                swap(a[start], a[end]);
+            }
+            return;
+        }
+
+        const int p = hoare_partition<Container>(a, start, end);
+        quicksort<Container>(a, start, p);
+        quicksort<Container>(a, p + 1, end);
+    }
+
+    template <typename Container>
+    void quicksort(Container& a) {
+        quicksort(a, 0, a.size() - 1);
+    }
+
+    std::vector<int> make_ints(int length, int from, int to) {
+        std::random_device random_device;
+        std::mt19937_64 engine(random_device());
+        std::uniform_int_distribution<int> dist(from, to);
+
+        std::vector<int> v;
+        v.reserve(length);
+
+        for (int i = 0; i < length; ++i) {
+            v.push_back(dist(engine));
+        }
+
+        return v;
+    }
+
+    std::vector<int> make_bad_ints(int length) {
+        std::vector<int> v;
+        const int l = length;
+        for (int i = 0; i < l; ++i) {
+            v.push_back(--length);
+        }
+        return v;
+    }
+
+    template <typename E>
+    std::ostream& operator<<(std::ostream& os, const std::vector<E>& v) {
+        os << '[';
+        const int l = v.size();
+        const int l1 = l - 1;
+        for (int i = 0; i < l; ++i) {
+            os << v[i];
+            if (i != l1) {
+                os << ", ";
+            }
+        }
+        os << ']';
+        return os;
+    }
+
+    void main() {
+        std::vector<int> v = make_ints(100'000'000, 0, 1000);
+        //std::vector<int> v = make_bad_ints(1000);
+
+        //std::cout << v << '\n';
+
+        auto start = std::chrono::high_resolution_clock::now();
+
+        quicksort(v);
+        //std::sort(v.begin(), v.end());
+
+        //{
+        //    using namespace std::chrono_literals;
+        //    std::this_thread::sleep_for(10ms);
+        //}
+
+        auto end = std::chrono::high_resolution_clock::now();
+
+        auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+        std::cout << duration << '\n';
+        //std::cout << v << '\n';
+    }
+}
+
 int main(const int argc, const char* argv[]) {
-    Threads::main(argc, argv);
-    //Predefined::main();
-    //Whaa::main();
-    //UserDefinedLiterals::main();
-    //DefaultDtor::main();
-    //Replace::main();
-    //ADL::main();
-    //ExplicitConversion::main();
-    //TemplateMadness::main();
-    //ConstructorThrows::main();
-    //InitializerList::main();
-    //OOP::main();
-    //CallingConventions::main();
-    //ConstReferenceToTemporary::main();
-    //Assertions::main();
-    //InitializerLists::main();
-    //Templates::main();
-    //SmartPointers::main();
-    //Lambdas::main();
-    //Random::main();
-    //ValueCategories::main();
-    //Madness::main();
-    //GoTo::main();
-    //Typeid::main();
-    //OOFail::main();
-    //LambdaFail::main();
-    //PointerToTemporaryFail::main();
-    //DuffsDevice::main();
-    //Tie::main();
-    //CPlusPlusMacro::main();
-    //CXX14::main();
-    //Tree::main();
-    //FizzBuzz::fizz_buzz(100);
-    //StringTest::main();
+    Quicksort::main();
 }
