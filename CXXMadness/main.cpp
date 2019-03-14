@@ -15,6 +15,7 @@
 #include <sstream>
 #include <atomic>
 #include <future>
+#include <type_traits>
 
 #include "StupidString.h"
 
@@ -1372,6 +1373,61 @@ namespace Threads {
     }
 }
 
+namespace NiceFunctions {
+    template <typename E>
+    std::vector<E> make_rnd_vals(int length, E from, E to) {
+        std::random_device random_device;
+        std::mt19937_64 engine(random_device());
+        std::uniform_int_distribution<E> dist(from, to);
+
+        std::vector<E> v;
+        v.reserve(length);
+
+        for (int i = 0; i < length; ++i) {
+            v.push_back(dist(engine));
+        }
+
+        return v;
+    }
+
+    std::vector<int> make_bad_ints(int length) {
+        std::vector<int> v;
+        const int l = length;
+        for (int i = 0; i < l; ++i) {
+            v.push_back(--length);
+        }
+        return v;
+    }
+
+    template <typename E>
+    std::ostream& operator<<(std::ostream& os, const std::vector<E>& v) {
+        os << '[';
+        const size_t l = v.size();
+        const size_t l1 = l - 1;
+        for (size_t i = 0; i < l; ++i) {
+            os << v[i];
+            if (i != l1) {
+                os << ", ";
+            }
+        }
+        os << ']';
+        return os;
+    }
+
+    // Action is a no-arg function (return value is ignored)
+    // Returns nanoseconds
+    template <typename Action>
+    int64_t time(Action action) {
+        auto start = std::chrono::high_resolution_clock::now();
+
+        action();
+
+        auto end = std::chrono::high_resolution_clock::now();
+
+        return std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+    }
+}
+
 namespace Quicksort {
     template <typename E>
     void swap(E& a, E& b) {
@@ -1423,69 +1479,115 @@ namespace Quicksort {
         quicksort(a, 0, a.size() - 1);
     }
 
-    std::vector<int> make_ints(int length, int from, int to) {
-        std::random_device random_device;
-        std::mt19937_64 engine(random_device());
-        std::uniform_int_distribution<int> dist(from, to);
+    void main() {
+        using namespace NiceFunctions;
 
-        std::vector<int> v;
-        v.reserve(length);
+        std::vector<int16_t> v = make_rnd_vals<int16_t>(100'000'000, -50000, 50000);
+        //std::vector<int> v = make_bad_ints(1000);
 
-        for (int i = 0; i < length; ++i) {
-            v.push_back(dist(engine));
+        if (v.size() <= 100) {
+            std::cout << v << '\n';
         }
 
-        return v;
-    }
+        int64_t duration = time([&]() {
+            quicksort(v);
+        });
 
-    std::vector<int> make_bad_ints(int length) {
-        std::vector<int> v;
-        const int l = length;
-        for (int i = 0; i < l; ++i) {
-            v.push_back(--length);
+        std::cout << duration << '\n';
+
+        if (v.size() <= 100) {
+            std::cout << v << '\n';
         }
-        return v;
     }
+}
 
-    template <typename E>
-    std::ostream& operator<<(std::ostream& os, const std::vector<E>& v) {
-        os << '[';
-        const int l = v.size();
-        const int l1 = l - 1;
-        for (int i = 0; i < l; ++i) {
-            os << v[i];
-            if (i != l1) {
-                os << ", ";
+// For small arrays, quicksort is faster. 
+// Empirically, the cutoff for arrays of 16-bit integers is around 3000 elements, which agrees with Java's hardcoded cutoff of 3200
+namespace CountSort {
+    // TODO: count sort for any element type that can be mapped to a bounded integer
+
+    // Iter must be bidirectional (support the decrement operator)
+    // Iter's value type must be integral
+    template <typename Iter>
+    void count_sort(
+        Iter begin, 
+        Iter end, 
+        int64_t min = std::numeric_limits<typename std::iterator_traits<Iter>::value_type>::min(),
+        int64_t max = std::numeric_limits<typename std::iterator_traits<Iter>::value_type>::max()
+    ) {
+        std::vector<size_t> cc(max - min + 1, 0); // an element for each possible value, initially all zeros
+        
+        auto it = begin;
+        while (it != end) {
+            cc[*it++ - min]++;
+        }
+        // remember that `it` is at `end`
+
+        auto j = cc.size();
+        while (it != begin) {
+            size_t count;
+            while ((count = cc[--j]) == 0) {
+                // Skip zeros
+            }
+            
+            const auto val = j + min;
+            while (count-- > 0) {
+                *(--it) = val; // narrowing conversion is ok
             }
         }
-        os << ']';
-        return os;
+    }
+
+    // Kind of pointless in retrospect
+    // Still, at least an exercise in static_assert and `using`
+    template <typename Iter>
+    void count_sort_checked(Iter begin, Iter end) {
+        using E = typename std::iterator_traits<Iter>::value_type;
+        using IterCategory = typename std::iterator_traits<Iter>::iterator_category;
+        
+        static_assert(std::is_base_of<std::bidirectional_iterator_tag, IterCategory>::value, "Bidirectional iterator required");
+        static_assert(std::is_integral<E>::value, "Integral value type required");
+        
+        const auto E_min = std::numeric_limits<E>::min();
+        const auto E_max = std::numeric_limits<E>::max();
+
+        const int i16_min = std::numeric_limits<int16_t>::min();
+        const int i16_max = std::numeric_limits<int16_t>::max();
+
+        static_assert(i16_min <= E_min && E_max <= i16_max, "Value range must fit in 16-bit integer");
+
+        count_sort<Iter, E_min, E_max>(begin, end);
     }
 
     void main() {
-        std::vector<int> v = make_ints(100'000'000, 0, 1000);
-        //std::vector<int> v = make_bad_ints(1000);
+        using namespace NiceFunctions;
 
-        //std::cout << v << '\n';
+        //std::vector<std::string> vs;
+        //count_sort(vs.begin(), vs.end());
 
-        auto start = std::chrono::high_resolution_clock::now();
+        //std::vector<int32_t> vi;
+        //count_sort(vi.begin(), vi.end());
+        
+        //std::vector<int8_t> vb{ 5,4,3,2,1,3,5 };
+        //count_sort(vb.begin(), vb.end());
 
-        quicksort(v);
-        //std::sort(v.begin(), v.end());
-
-        //{
-        //    using namespace std::chrono_literals;
-        //    std::this_thread::sleep_for(10ms);
-        //}
-
-        auto end = std::chrono::high_resolution_clock::now();
-
-        auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+        std::vector<int16_t> v = make_rnd_vals<int16_t>(100'000'000, -50000, 50000);
+        if (v.size() <= 100) {
+            std::cout << v << '\n';
+        }
+        
+        int64_t duration = time([&]() {
+            count_sort(v.begin(), v.end());
+        });
+        
         std::cout << duration << '\n';
-        //std::cout << v << '\n';
+        
+        if (v.size() <= 100) {
+            std::cout << v << '\n';
+        }
     }
 }
 
 int main(const int argc, const char* argv[]) {
     Quicksort::main();
+    CountSort::main();
 }
