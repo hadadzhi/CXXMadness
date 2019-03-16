@@ -1426,6 +1426,41 @@ namespace NiceFunctions {
 
         return std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
     }
+
+    // Computes n to the power of k recursively
+    constexpr int64_t ipow_r(int64_t n, int k) {
+        return k < 0 ? 0
+            : n == 1 || k < 1 ? 1
+            : k & 1 // k is odd
+            ? n * ipow_r(n * n, k >> 1)
+            : ipow_r(n * n, k >> 1);
+    }
+
+    // Computes n to the power of k (tail-call optimized)
+    constexpr int64_t ipow_tr(int64_t n, int k, int64_t result = 1) {
+        return k < 0 ? 0
+            : n == 1 || k < 1 ? result
+            : ipow_tr(n * n, k >> 1, k & 1 ? n * result : result);
+    }
+
+    // Computes n to the power of k
+    constexpr int64_t ipow(int64_t n, int k) {
+        return ipow_tr(n, k);
+    }
+
+    void main() {
+        // ipow "test"
+        for (auto f : {ipow_r, ipow}) {
+            std::cout << f(2, 62) << '\n';
+            std::cout << f(10, 18) << '\n';
+            std::cout << f(12, 3) << '\n';
+            std::cout << f(0, 0) << '\n';
+            std::cout << f(1, 0) << '\n';
+            std::cout << f(0, 1) << '\n';
+            std::cout << f(-1, 1) << '\n';
+            std::cout << f(-1, 0) << "\n\n";
+        }
+    }
 }
 
 namespace Quicksort {
@@ -1482,7 +1517,10 @@ namespace Quicksort {
     void main() {
         using namespace NiceFunctions;
 
-        std::vector<int16_t> v = make_rnd_vals<int16_t>(100'000'000, -50000, 50000);
+        constexpr int min = -1000;
+        constexpr int max = 1000;
+
+        std::vector<int16_t> v = make_rnd_vals<int16_t>(1000, min, max);
         //std::vector<int> v = make_bad_ints(1000);
 
         if (v.size() <= 100) {
@@ -1502,37 +1540,43 @@ namespace Quicksort {
 }
 
 // For small arrays, quicksort is faster. 
-// Empirically, the cutoff for arrays of 16-bit integers is around 3000 elements, which agrees with Java's hardcoded cutoff of 3200
+// Empirically, the cutoff for arrays of int16_t is around 3000 elements, which agrees with Java's hardcoded cutoff of 3200
+// Though, if min/max is specified and significantly smaller than maximum range of Iter's value type, then count sort may still be faster
+// For example, for 1000 `int16_t`s from -1000 to 1000 count sort is 2.5x faster
 namespace CountSort {
     // TODO: count sort for any element type that can be mapped to a bounded integer
 
     // Iter must be bidirectional (support the decrement operator)
     // Iter's value type must be integral
+    // int is used to specify min/max value of the iterator's value type, b/c realistically, bigger ranges will require too much memory
+    // Also, the input array length is required to fit into an int
     template <typename Iter>
     void count_sort(
-        Iter begin, 
-        Iter end, 
-        int64_t min = std::numeric_limits<typename std::iterator_traits<Iter>::value_type>::min(),
-        int64_t max = std::numeric_limits<typename std::iterator_traits<Iter>::value_type>::max()
+        Iter begin,
+        Iter end,
+        int min = std::numeric_limits<typename std::iterator_traits<Iter>::value_type>::min(),
+        int max = std::numeric_limits<typename std::iterator_traits<Iter>::value_type>::max()
     ) {
-        std::vector<size_t> cc(max - min + 1, 0); // an element for each possible value, initially all zeros
-        
-        auto it = begin;
+        assert(max - min > 0);
+        assert(max - min < std::numeric_limits<int>::max());
+        assert((end - begin) <= std::numeric_limits<int>::max());
+
+        std::vector<int> counts(max - min + 1, 0);
+
+        Iter it = begin;
         while (it != end) {
-            cc[*it++ - min]++;
+            counts[*it++ - min]++;
         }
         // remember that `it` is at `end`
 
-        auto j = cc.size();
+        int j = counts.size();
         while (it != begin) {
-            size_t count;
-            while ((count = cc[--j]) == 0) {
+            int count;
+            while ((count = counts[--j]) == 0) {
                 // Skip zeros
             }
-            
-            const auto val = j + min;
             while (count-- > 0) {
-                *(--it) = val; // narrowing conversion is ok
+                *(--it) = j + min; // possible narrowing conversion is ok
             }
         }
     }
@@ -1543,10 +1587,10 @@ namespace CountSort {
     void count_sort_checked(Iter begin, Iter end) {
         using E = typename std::iterator_traits<Iter>::value_type;
         using IterCategory = typename std::iterator_traits<Iter>::iterator_category;
-        
+
         static_assert(std::is_base_of<std::bidirectional_iterator_tag, IterCategory>::value, "Bidirectional iterator required");
         static_assert(std::is_integral<E>::value, "Integral value type required");
-        
+
         const auto E_min = std::numeric_limits<E>::min();
         const auto E_max = std::numeric_limits<E>::max();
 
@@ -1566,21 +1610,25 @@ namespace CountSort {
 
         //std::vector<int32_t> vi;
         //count_sort(vi.begin(), vi.end());
-        
+
         //std::vector<int8_t> vb{ 5,4,3,2,1,3,5 };
         //count_sort(vb.begin(), vb.end());
 
-        std::vector<int16_t> v = make_rnd_vals<int16_t>(100'000'000, -50000, 50000);
+        constexpr int min = -1000;
+        constexpr int max = 1000;
+
+        std::vector<int16_t> v = make_rnd_vals<int16_t>(1000, min, max);
         if (v.size() <= 100) {
             std::cout << v << '\n';
         }
-        
+
         int64_t duration = time([&]() {
-            count_sort(v.begin(), v.end());
+            count_sort(v.begin(), v.end(), min, max);
+            //count_sort(v.begin(), v.end());
         });
-        
+
         std::cout << duration << '\n';
-        
+
         if (v.size() <= 100) {
             std::cout << v << '\n';
         }
@@ -1590,4 +1638,5 @@ namespace CountSort {
 int main(const int argc, const char* argv[]) {
     Quicksort::main();
     CountSort::main();
+    //NiceFunctions::main();
 }
