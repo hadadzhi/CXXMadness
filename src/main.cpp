@@ -1713,7 +1713,7 @@ namespace CountSortTests {
         Task(int priority, std::string name) : priority(priority), name(std::move(name)) {} // TODO research this trick: accepting string by value and moving
     };
 
-// For some reason, after uncommmeting this, another overload of operator<< defined in NiceFunction breaks :(
+// For some reason, after uncommmeting this, another overload of operator<< defined in NiceFunctions breaks :(
 //     std::ostream& operator<<(std::ostream& os, const Task& t) {
 //         os << "{priority=" << t.priority << ", name='" << t.name << "'}";
 //         return os;
