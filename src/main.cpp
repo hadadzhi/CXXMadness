@@ -33,9 +33,9 @@ namespace ConstReferenceToTemporary {
 namespace Assertions {
     void main() {
 
-        #if false
+#if false
         static_assert(false, "This sentence is false");
-        #endif
+#endif
 
     }
 }
@@ -288,12 +288,12 @@ namespace GoTo {
 
         bool jump{true};
 
-    Label1:
+        Label1:
         {
             Foo foo1;
             Foo foo2;
 
-            //            Label2:
+
             if (jump) {
                 goto Label3;
             }
@@ -301,7 +301,7 @@ namespace GoTo {
             Foo foo3;
         }
 
-    Label3:
+        Label3:
         if (jump) {
             jump = false;
             //            goto Label2; // Error: skips initialization
@@ -411,14 +411,14 @@ namespace DuffsDevice {
         int n = (count + 7) / 8;
         switch (count % 8) {
             do {
-            case 0: std::cout << count-- << ' ';
-            case 7: std::cout << count-- << ' ';
-            case 6: std::cout << count-- << ' ';
-            case 5: std::cout << count-- << ' ';
-            case 4: std::cout << count-- << ' ';
-            case 3: std::cout << count-- << ' ';
-            case 2: std::cout << count-- << ' ';
-            case 1: std::cout << count-- << ' ';
+                case 0: std::cout << count-- << ' ';
+                case 7: std::cout << count-- << ' ';
+                case 6: std::cout << count-- << ' ';
+                case 5: std::cout << count-- << ' ';
+                case 4: std::cout << count-- << ' ';
+                case 3: std::cout << count-- << ' ';
+                case 2: std::cout << count-- << ' ';
+                case 1: std::cout << count-- << ' ';
             } while (--n > 0);
         }
     }
@@ -689,7 +689,8 @@ namespace FizzBuzz {
 
             if (out.length() == 0) {
                 std::cout << i << '\n';
-            } else {
+            }
+            else {
                 std::cout << out << '\n';
             }
         }
@@ -900,7 +901,8 @@ namespace ConstructorThrows {
     void main() {
         try {
             Foo foo;
-        } catch (...) {
+        }
+        catch (...) {
             std::cout << "Exception caught\n";
         }
     }
@@ -1084,7 +1086,8 @@ namespace ExplicitConversion {
         // in noexcept specifier
         if (foo) {
             std::cout << "Foo() == true\n";
-        } else {
+        }
+        else {
             std::cout << "Foo() == false\n";
         }
     }
@@ -1208,7 +1211,7 @@ namespace DefaultDtor {
         // BTW, it doesn't bother Clang that a function that
         // must return a value, does not return a value.
         // MSVC refuses to compile this
-        //Bar3& operator=(Bar3&&) {} 
+        //Bar3& operator=(Bar3&&) {}
         Bar3& operator=(Bar3&&) { return *this; }
     };
 
@@ -1223,7 +1226,7 @@ namespace DefaultDtor {
 
 namespace UserDefinedLiterals {
     // Integral literals are always unsigned -- '-' is not part of the literal
-    long long operator""_km(unsigned long long lv) {
+    long long operator ""_km(unsigned long long lv) {
         assert(lv < std::numeric_limits<long long>::max());
         std::cout << "Value of the literal = " << lv << '\n';
         return lv;
@@ -1266,13 +1269,13 @@ namespace Predefined {
 
         std::cout << "Non-standard:\n";
 
-        #ifdef __PRETTY_FUNCTION__
+#ifdef __PRETTY_FUNCTION__
         std::cout << "__PRETTY_FUNCTION__ = " << __PRETTY_FUNCTION__ << '\n';
-        #endif
+#endif
 
-        #ifdef __FUNCTION__
+#ifdef __FUNCTION__
         std::cout << "__FUNCTION__ = " << __FUNCTION__ << '\n';
-        #endif
+#endif
     }
 }
 
@@ -1305,7 +1308,7 @@ namespace Threads {
     }
 
     template<typename Func, typename... ArgTypes>
-    void run_and_wait(const int num_threads, Func&& func, ArgTypes&&... args) {
+    void run_and_wait(const int num_threads, Func&& func, ArgTypes&& ... args) {
         std::vector<std::future<void>> fs;
 
         for (int i{0}; i < num_threads; ++i) {
@@ -1354,27 +1357,22 @@ namespace Threads {
         }
 
         switch (std::atoi(argv[1])) {
-            case 1:
-                count_st();
+            case 1:count_st();
                 break;
-            case 2:
-                count_st_async();
+            case 2:count_st_async();
                 break;
-            case 3:
-                count_mt_atomic();
+            case 3:count_mt_atomic();
                 break;
-            case 4:
-                count_mt_lock();
+            case 4:count_mt_lock();
                 break;
-            default:
-                print_error();
+            default:print_error();
                 return;
         }
     }
 }
 
 namespace NiceFunctions {
-    template <typename E>
+    template<typename E>
     std::vector<E> make_rnd_vals(int length, E from, E to) {
         std::random_device random_device;
         std::mt19937_64 engine(random_device());
@@ -1399,7 +1397,7 @@ namespace NiceFunctions {
         return v;
     }
 
-    template <typename E>
+    template<typename E>
     std::ostream& operator<<(std::ostream& os, const std::vector<E>& v) {
         os << '[';
         const size_t l = v.size();
@@ -1416,8 +1414,8 @@ namespace NiceFunctions {
 
     // Action is a no-arg function (return value is ignored)
     // Returns nanoseconds
-    template <typename Action>
-    int64_t time(Action action) {
+    template<typename Action>
+    int64_t time(const Action& action) {
         auto start = std::chrono::high_resolution_clock::now();
 
         action();
@@ -1430,17 +1428,17 @@ namespace NiceFunctions {
     // Computes n to the power of k recursively
     constexpr int64_t ipow_r(int64_t n, int k) {
         return k < 0 ? 0
-            : n == 1 || k < 1 ? 1
-            : k & 1 // k is odd
-            ? n * ipow_r(n * n, k >> 1)
-            : ipow_r(n * n, k >> 1);
+                     : n == 1 || k < 1 ? 1
+                                       : k & 1 // k is odd
+                                         ? n * ipow_r(n * n, k >> 1)
+                                         : ipow_r(n * n, k >> 1);
     }
 
     // Computes n to the power of k (tail-call optimized)
     constexpr int64_t ipow_tr(int64_t n, int k, int64_t result = 1) {
         return k < 0 ? 0
-            : n == 1 || k < 1 ? result
-            : ipow_tr(n * n, k >> 1, k & 1 ? n * result : result);
+                     : n == 1 || k < 1 ? result
+                                       : ipow_tr(n * n, k >> 1, k & 1 ? n * result : result);
     }
 
     // Computes n to the power of k
@@ -1464,14 +1462,14 @@ namespace NiceFunctions {
 }
 
 namespace Quicksort {
-    template <typename E>
+    template<typename E>
     void swap(E& a, E& b) {
         const E t = std::move(a);
         a = std::move(b);
         b = std::move(t);
     }
 
-    template <typename Container>
+    template<typename Container>
     int hoare_partition(Container& a, int start, int end) {
         assert(start < end);
 
@@ -1480,8 +1478,8 @@ namespace Quicksort {
         --start;
         ++end;
         while (true) {
-            while (a[++start] < pivot);
-            while (a[--end] > pivot);
+            while (a[++start] < pivot) {}
+            while (a[--end] > pivot) {}
             if (start >= end) {
                 return end;
             }
@@ -1489,7 +1487,7 @@ namespace Quicksort {
         }
     }
 
-    template <typename Container>
+    template<typename Container>
     void quicksort(Container& a, const int start, const int end) {
         const int length = end - start + 1;
 
@@ -1509,7 +1507,7 @@ namespace Quicksort {
         quicksort<Container>(a, p + 1, end);
     }
 
-    template <typename Container>
+    template<typename Container>
     void quicksort(Container& a) {
         quicksort(a, 0, a.size() - 1);
     }
@@ -1520,7 +1518,7 @@ namespace Quicksort {
         constexpr int min = -1000;
         constexpr int max = 1000;
 
-        std::vector<int16_t> v = make_rnd_vals<int16_t>(1000, min, max);
+        auto v = make_rnd_vals<int32_t>(100'000'000, min, max);
         //std::vector<int> v = make_bad_ints(1000);
 
         if (v.size() <= 100) {
@@ -1539,7 +1537,7 @@ namespace Quicksort {
     }
 }
 
-// For small arrays, quicksort is faster. 
+// For small arrays, quicksort is faster.
 // Empirically, the cutoff for arrays of int16_t is around 3000 elements, which agrees with Java's hardcoded cutoff of 3200
 // Though, if min/max is specified and significantly smaller than maximum range of Iter's value type, then count sort may still be faster
 // For example, for 1000 `int16_t`s from -1000 to 1000 count sort is 2.5x faster
@@ -1550,13 +1548,12 @@ namespace CountSort {
     // Iter's value type must be integral
     // int is used to specify min/max value of the iterator's value type, b/c realistically, bigger ranges will require too much memory
     // Also, the input array length is required to fit into an int
-    template <typename Iter>
-    void count_sort(
-        Iter begin,
-        Iter end,
-        int min = std::numeric_limits<typename std::iterator_traits<Iter>::value_type>::min(),
-        int max = std::numeric_limits<typename std::iterator_traits<Iter>::value_type>::max()
-    ) {
+    template<typename Iter>
+    void count_sort(Iter begin,
+                    Iter end,
+                    int min = std::numeric_limits<typename std::iterator_traits<Iter>::value_type>::min(),
+                    int max = std::numeric_limits<typename std::iterator_traits<Iter>::value_type>::max()) {
+
         assert(max - min > 0);
         assert(max - min < std::numeric_limits<int>::max());
         assert((end - begin) <= std::numeric_limits<int>::max());
@@ -1569,7 +1566,7 @@ namespace CountSort {
         }
         // remember that `it` is at `end`
 
-        int j = counts.size();
+        int j = counts.size(); // narrowing conversion is ok
         while (it != begin) {
             int count;
             while ((count = counts[--j]) == 0) {
@@ -1583,7 +1580,7 @@ namespace CountSort {
 
     // Kind of pointless in retrospect
     // Still, at least an exercise in static_assert and `using`
-    template <typename Iter>
+    template<typename Iter>
     void count_sort_checked(Iter begin, Iter end) {
         using E = typename std::iterator_traits<Iter>::value_type;
         using IterCategory = typename std::iterator_traits<Iter>::iterator_category;
@@ -1605,38 +1602,50 @@ namespace CountSort {
     void main() {
         using namespace NiceFunctions;
 
-        //std::vector<std::string> vs;
-        //count_sort(vs.begin(), vs.end());
+        using elem_type = int32_t;
+        using array_type = std::vector<elem_type>;
 
-        //std::vector<int32_t> vi;
-        //count_sort(vi.begin(), vi.end());
+        constexpr elem_type min = -100000;
+        constexpr elem_type max = 100000;
 
-        //std::vector<int8_t> vb{ 5,4,3,2,1,3,5 };
-        //count_sort(vb.begin(), vb.end());
+        std::function<void(array_type*)> l_countsort = [](array_type* pv) {
+            count_sort(begin(*pv), end(*pv), min, max);
+        };
 
-        constexpr int min = -1000;
-        constexpr int max = 1000;
+        std::function<void(array_type*)> l_quicksort = [](array_type* pv) {
+            Quicksort::quicksort(*pv);
+        };
 
-        std::vector<int16_t> v = make_rnd_vals<int16_t>(1000, min, max);
-        if (v.size() <= 100) {
-            std::cout << v << '\n';
-        }
+        std::function<void(array_type*)> l_stdsort = [](array_type* pv) {
+            std::sort(pv->begin(), pv->end());
+        };
 
-        int64_t duration = time([&]() {
-            count_sort(v.begin(), v.end(), min, max);
-            //count_sort(v.begin(), v.end());
-        });
+        auto v1 = make_rnd_vals<elem_type>(100'000'000, min, max);
+        auto v2 = v1;
+        auto v3 = v1;
+        for (auto& t : {std::make_tuple(&v1, l_countsort),
+                        std::make_tuple(&v2, l_quicksort),
+                        std::make_tuple(&v3, l_stdsort)}) {
+            auto pv = std::get<0>(t);
+            auto f = std::get<1>(t);
 
-        std::cout << duration << '\n';
+            if (pv->size() <= 100) {
+                std::cerr << *pv << '\n';
+            }
 
-        if (v.size() <= 100) {
-            std::cout << v << '\n';
+            int64_t duration = time([&]() {
+                f(pv);
+            });
+
+            std::cerr << duration << "ns" << '\n';
+
+            if (pv->size() <= 100) {
+                std::cerr << *pv << '\n';
+            }
         }
     }
 }
 
 int main(const int argc, const char* argv[]) {
-    Quicksort::main();
     CountSort::main();
-    //NiceFunctions::main();
 }
