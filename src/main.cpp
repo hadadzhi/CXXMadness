@@ -1575,7 +1575,7 @@ namespace CountSort {
         }
     };
     
-    // Iter must be bidirectional (support the decrement operator). Iter's value type must be integral.
+    // Iter must be bidirectional (support the decrement operator).
     //
     // MapToInt is a key function (iter's value type -> int).
     //
@@ -1645,6 +1645,14 @@ namespace CountSort {
         }
     }
     
+    // Iter must be bidirectional (support the decrement operator).
+    // Iter's value type must be integral.
+    //
+    // min/max is the minimum/maximum value contained in the input array.
+    // If not specified or invalid (max <= min), performs additional linear search.
+    // (max - min + 1) must not overflow and must fit into a size_t.
+    //
+    // The sort is stable (preserves the order of elements with the same key).
     template<typename Iter, typename ElemType = typename std::iterator_traits<Iter>::value_type>
     void count_sort(Iter begin,
                     Iter end,
@@ -1724,10 +1732,10 @@ namespace CountSortTests {
         using namespace CountSort;
         
         std::vector<Task> ts;
-        ts.emplace_back(42, "One");
-        ts.emplace_back(24, "ONE!!");
-        ts.emplace_back(42, "Two");
-        ts.emplace_back(24, "TWO!!");
+        ts.emplace_back(42, "One!!");
+        ts.emplace_back(100500, "One");
+        ts.emplace_back(100500, "Two");
+        ts.emplace_back(42, "Two!!");
     
         for (const auto& t : ts) {
             std::cout << '{' << t.priority << ' ' << t.name << "}, ";
