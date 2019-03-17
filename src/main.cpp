@@ -1718,7 +1718,33 @@ namespace CountSortTests {
     struct Task {
         int priority;
         std::string name;
-        Task(int priority, std::string name) : priority(priority), name(std::move(name)) {} // TODO research this trick: accepting string by value and moving
+        
+        Task(Task&& other) noexcept {
+            priority = other.priority;
+            name = std::move(other.name);
+            std::cerr << "task move-constructed\n";
+        };
+        
+        Task& operator=(Task&& other) noexcept {
+            priority = other.priority;
+            name = std::move(other.name);
+            std::cerr << "task move-assigned\n";
+            return *this;
+        }
+        
+        Task(Task& other) {
+            assert(false);
+            std::cerr << "task copy-constructed\n";
+        }
+        
+        Task& operator=(const Task& other) {
+            assert(false);
+            std::cerr << "task copy-assigned\n";
+        }
+        
+        Task(int priority, std::string name) : priority(priority), name(std::move(name)) {
+            std::cerr << "task constructed\n";
+        } // TODO research this trick: accepting string by value and moving
     };
 
 // For some reason, after uncommmeting this, another overload of operator<< defined in NiceFunctions breaks :(
@@ -1742,6 +1768,7 @@ namespace CountSortTests {
         }
         std::cout << '\n';
         
+        std::cerr << '\n';
         count_sort(begin(ts), end(ts), [](const Task& p) { return p.priority; });
         
         // verify sort stability
@@ -1763,7 +1790,26 @@ namespace CountSortTests {
 //    }
 }
 
+namespace MapExperiments {
+    void main() {
+        std::map<int, std::string> m;
+        m[15] = "15";
+        m[-1] = "-1";
+        m[22] = "22";
+        m[-1234] = "-1234";
+        
+        for (auto& kv : m) {
+            std::get<1>(kv) += "!"; // std::get returns a reference
+        }
+        
+        for (const auto& kv : m) {
+            std::cout << std::get<1>(kv) << '\n';
+        }
+    }
+}
+
 int main(const int argc, const char* argv[]) {
-    CountSortTests::versus();
+//    CountSortTests::versus();
     CountSortTests::sort_anything();
+//    MapExperiments::main();
 }
