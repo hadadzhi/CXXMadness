@@ -1809,8 +1809,42 @@ namespace MapExperiments {
     }
 }
 
+namespace Newton {
+    // Assuming Func is non-decreasing on (from, to) and crosses zero on (from, to),
+    // finds a value R such that f(R) < tolerance
+    template<typename Func, typename TArg, typename TVal>
+    TArg find_root(const Func& f, TArg from, TArg to, TVal tolerance) {
+        static_assert(std::is_same<decltype(f(from)), TVal>::value);
+        assert(from < to);
+        assert(tolerance > 0);
+        assert(f(from) < 0);
+        assert(f(to) > 0);
+        
+        const TArg two = 2;
+        const TArg mid = (from + to) / two;
+        const TVal f_mid = f(mid);
+        
+        if (std::abs(f_mid) < tolerance) {
+            return mid;
+        }
+        
+        return find_root(
+                f,
+                f_mid > 0 ? from : mid,
+                f_mid > 0 ? mid : to,
+                tolerance
+        );
+    }
+    
+    void main() {
+        // CLRS 1.2-2
+        std::cout << find_root([](double x) { return 8*x*x/(64*x*std::log2(x)) - 1; }, 2., 100., 0.001) << '\n';
+    }
+}
+
 int main(const int argc, const char* argv[]) {
 //    CountSortTests::versus();
-    CountSortTests::sort_anything();
+//    CountSortTests::sort_anything();
 //    MapExperiments::main();
+    Newton::main();
 }
