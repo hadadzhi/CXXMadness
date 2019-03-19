@@ -1740,6 +1740,7 @@ namespace CountSortTests {
         Task& operator=(const Task& other) {
             assert(false);
             std::cerr << "task copy-assigned\n";
+            return *this;
         }
         
         Task(int priority, std::string name) : priority(priority), name(std::move(name)) {
