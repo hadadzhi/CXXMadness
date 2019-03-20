@@ -1376,8 +1376,7 @@ namespace Threads {
 namespace NiceFunctions {
     template<typename E>
     std::vector<E> make_rnd_vals(int length, E from, E to) {
-        std::random_device random_device;
-        std::mt19937_64 engine(random_device());
+        std::mt19937_64 engine(length);
         std::uniform_int_distribution<E> dist(from, to);
         
         std::vector<E> v;
@@ -1763,7 +1762,7 @@ namespace CountSortTests {
         ts.emplace_back(100500, "One");
         ts.emplace_back(100500, "Two");
         ts.emplace_back(42, "Two!!");
-    
+        
         for (const auto& t : ts) {
             std::cout << '{' << t.priority << ' ' << t.name << "}, ";
         }
@@ -1838,7 +1837,52 @@ namespace Newton {
     
     void main() {
         // CLRS 1.2-2
-        std::cout << find_root([](double x) { return 8*x*x/(64*x*std::log2(x)) - 1; }, 2., 1000.) << '\n';
+        std::cout << find_root([](double x) { return 8 * x * x / (64 * x * std::log2(x)) - 1; }, 2., 1000.) << '\n';
+    }
+}
+
+namespace MergeSort {
+    constexpr size_t InsertionSortThreshold = 32;
+    
+    // Fallback to this if array length is lte InsertionSortThreshold
+    // Generally the best algorithm for small arrays
+    // InsertionSortThreshold is machine- and implementation- dependent
+    template<typename Iter>
+    void insertion_sort(Iter begin, Iter end) {
+        auto length = end - begin;
+        
+        if (length < 2) {
+            return;
+        }
+        
+        using it_diff_t = decltype(length);
+        
+        // The loop invariant is that array is always of the form [s1, s2, ..., sN, u1, u2, ..., uN]
+        // where s1..sN are sorted, and u1..uN are unsorted
+        // i points to the last element in the sorted subarray
+        // j runs through unsorted elements
+        for (it_diff_t j = 1; j < length; ++j) {
+            auto jth = std::move(begin[j]); // stage jth element
+            auto i = j - 1;
+            for (; i >= 0 && begin[i] > jth; --i) { // for each element in the sorted array that is gt jth
+                begin[i + 1] = std::move(begin[i]); // move it to the right
+            }
+            begin[i + 1] = std::move(jth); // move jth to its position in the sorted array
+            // Note to self -- resist the temptaion to rewrite this with std::swap -- it's 3x slower, b/c it does 3x more moves!
+        }
+    }
+    
+    // Merges sorted subarrays [start, mid] and [mid + 1, end]
+    // The result of the merge goes into [start, end]
+    template<typename Iter>
+    void merge(Iter start, Iter mid, Iter end) {
+    
+    }
+    
+    // Iter must be a random-access mutable iterator
+    template<typename Iter>
+    void merge_sort(Iter begin, Iter end) {
+    
     }
 }
 
@@ -1846,5 +1890,25 @@ int main(const int argc, const char* argv[]) {
 //    CountSortTests::versus();
 //    CountSortTests::sort_anything();
 //    MapExperiments::main();
-    Newton::main();
+//    Newton::main();
+    
+    using namespace NiceFunctions;
+
+//    std::vector<int> v{5, 4, 1, 3, 2};
+    
+    std::vector<int> v = make_rnd_vals(100'000, -10000, 10000);
+    
+    if (v.size() <= 100) {
+        std::cout << v << '\n';
+    }
+    
+    int64_t duration = time([&]() {
+        MergeSort::insertion_sort(begin(v), end(v));
+    });
+    
+    std::cout << duration << "ns" << '\n';
+    
+    if (v.size() <= 100) {
+        std::cout << v << '\n';
+    }
 }
