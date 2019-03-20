@@ -1810,18 +1810,18 @@ namespace MapExperiments {
 }
 
 namespace Newton {
-    // Assuming Func is non-decreasing on (from, to) and crosses zero on (from, to),
-    // finds a value R such that f(R) < tolerance
-    template<typename Func, typename TArg, typename TVal>
-    TArg find_root(const Func& f, TArg from, TArg to, TVal tolerance) {
+    // Assuming Func is a function TVal -> TVal that is non-decreasing on (from, to) and crosses zero on (from, to),
+    // finds a value R such that |f(R)| < tolerance
+    template<typename Func, typename TVal>
+    TVal find_root(const Func& f, TVal from, TVal to, TVal tolerance = std::numeric_limits<TVal>::epsilon()) {
         static_assert(std::is_same<decltype(f(from)), TVal>::value);
         assert(from < to);
         assert(tolerance > 0);
         assert(f(from) < 0);
         assert(f(to) > 0);
         
-        const TArg two = 2;
-        const TArg mid = (from + to) / two;
+        const TVal two = 2;
+        const TVal mid = (from + to) / two;
         const TVal f_mid = f(mid);
         
         if (std::abs(f_mid) < tolerance) {
@@ -1838,7 +1838,7 @@ namespace Newton {
     
     void main() {
         // CLRS 1.2-2
-        std::cout << find_root([](double x) { return 8*x*x/(64*x*std::log2(x)) - 1; }, 2., 100., 0.001) << '\n';
+        std::cout << find_root([](double x) { return 8*x*x/(64*x*std::log2(x)) - 1; }, 2., 1000.) << '\n';
     }
 }
 
