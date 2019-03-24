@@ -18,6 +18,7 @@
 #include <type_traits>
 #include <stack>
 #include <stdexcept>
+#include <map>
 
 #include "StupidString.h"
 
@@ -1375,25 +1376,39 @@ namespace Threads {
 
 namespace NiceFunctions {
     template<typename E>
-    std::vector<E> make_rnd_vals(int length, E from, E to) {
-        std::mt19937_64 engine(length);
-        std::uniform_int_distribution<E> dist(from, to);
-        
+    auto uniform_distribution(E from, E to, std::true_type) {
+        return std::uniform_int_distribution<E>(from, to);
+    }
+    
+    template<typename E>
+    auto uniform_distribution(E from, E to, std::false_type) {
+        return std::uniform_real_distribution<E>(from, to);
+    }
+    
+    template<typename E>
+    std::vector<E> make_rnd_vals(size_t length, E from, E to) {
+        static_assert(std::is_arithmetic<E>(), "E must be an arithmetic type");
+        auto rnd = std::bind(
+                uniform_distribution(from, to, std::is_integral<E>()),
+                std::default_random_engine(std::random_device()())
+        );
         std::vector<E> v;
+        
         v.reserve(length);
         
-        for (int i = 0; i < length; ++i) {
-            v.push_back(dist(engine));
+        for (size_t i = 0; i < length; ++i) {
+            v.push_back(rnd());
         }
         
         return v;
     }
     
-    std::vector<int> make_bad_ints(int length) {
+    template<typename E>
+    std::vector<E> make_decreasing_vals(size_t length, E from) {
         std::vector<int> v;
-        const int l = length;
-        for (int i = 0; i < l; ++i) {
-            v.push_back(--length);
+        v.reserve(length);
+        while (length--) {
+            v.push_back(from--);
         }
         return v;
     }
@@ -1427,7 +1442,8 @@ namespace NiceFunctions {
     }
     
     // Computes n to the power of k recursively
-    constexpr int64_t ipow_r(int64_t n, int k) {
+    template<typename T>
+    constexpr T ipow_r(T n, int k) {
         return k < 0 ? 0
                      : n == 1 || k < 1 ? 1
                                        : k & 1 // k is odd
@@ -1436,7 +1452,8 @@ namespace NiceFunctions {
     }
     
     // Computes n to the power of k (tail-call optimized)
-    constexpr int64_t ipow_tr(int64_t n, int k, int64_t result = 1) {
+    template<typename T>
+    constexpr T ipow_tr(T n, int k, int64_t result = 1) {
         return k < 0 ? 0
                      : n == 1 || k < 1 ? result
                                        : ipow_tr(n * n, k >> 1, k & 1 ? n * result : result);
@@ -1677,15 +1694,15 @@ namespace CountSortTests {
         constexpr elem_type max = 100000;
         constexpr size_t count = 10'000'000/*100'000'000*/;
         
-        std::function<void(array_type*)> l_countsort = [](array_type* pv) {
+        std::function<void(array_type*)> l_countsort = [=](array_type* pv) {
             count_sort(begin(*pv), end(*pv), min, max);
         };
         
-        std::function<void(array_type*)> l_quicksort = [](array_type* pv) {
+        std::function<void(array_type*)> l_quicksort = [=](array_type* pv) {
             Quicksort::quicksort(*pv);
         };
         
-        std::function<void(array_type*)> l_stdsort = [](array_type* pv) {
+        std::function<void(array_type*)> l_stdsort = [=](array_type* pv) {
             std::sort(pv->begin(), pv->end());
         };
         
@@ -1886,29 +1903,57 @@ namespace MergeSort {
     }
 }
 
+namespace StaticInBlock {
+    void inc_and_print() {
+        static int counter = 0;
+        ++counter;
+        std::cout << counter << '\n';
+    }
+    
+    void inc_and_print_block() {
+        {
+            static int counter = 0;
+            ++counter;
+            std::cout << counter << '\n';
+        }
+    }
+    
+    void count_and_print(int count_to) {
+        goto outside;
+        
+        {
+            static int counter = 0;
+            
+            inc_counter:
+            ++counter;
+            goto outside;
+            
+            print:
+            std::cout << counter << '\n';
+            return;
+        }
+        
+        outside:
+        if (count_to--) {
+            goto inc_counter;
+        }
+        goto print;
+    }
+    
+    void main() {
+        count_and_print(10);
+        count_and_print(10);
+        inc_and_print();
+        inc_and_print();
+        inc_and_print_block();
+        inc_and_print_block();
+    }
+}
+
 int main(const int argc, const char* argv[]) {
 //    CountSortTests::versus();
 //    CountSortTests::sort_anything();
 //    MapExperiments::main();
 //    Newton::main();
-    
-    using namespace NiceFunctions;
-
-//    std::vector<int> v{5, 4, 1, 3, 2};
-    
-    std::vector<int> v = make_rnd_vals(100'000, -10000, 10000);
-    
-    if (v.size() <= 100) {
-        std::cout << v << '\n';
-    }
-    
-    int64_t duration = time([&]() {
-        MergeSort::insertion_sort(begin(v), end(v));
-    });
-    
-    std::cout << duration << "ns" << '\n';
-    
-    if (v.size() <= 100) {
-        std::cout << v << '\n';
-    }
+    StaticInBlock::main();
 }
