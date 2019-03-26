@@ -1889,17 +1889,42 @@ namespace MergeSort {
         }
     }
     
-    // Merges sorted subarrays [start, mid] and [mid + 1, end]
-    // The result of the merge goes into [start, end]
-    template<typename Iter>
-    void merge(Iter start, Iter mid, Iter end) {
-    
-    }
-    
     // Iter must be a random-access mutable iterator
     template<typename Iter>
     void merge_sort(Iter begin, Iter end) {
+        const auto length = std::distance(begin, end);
+        
+        if (length <= 46) {
+            insertion_sort(begin, end);
+            return;
+        }
+        
+        const auto mid = begin + length / 2;
+        merge_sort(begin, mid);
+        merge_sort(mid, end);
+        
+        std::inplace_merge(begin, mid, end);
+    }
     
+    void main() {
+        using namespace NiceFunctions;
+        
+        auto v = make_rnd_vals(100'000'000, -100'000'000, 100'000'000);
+        if (v.size() <= 100) {
+            std::cout << v << '\n';
+        }
+    
+        int64_t duration = time([&]() {
+//            merge_sort(v.begin(), v.end());
+//            std::stable_sort(v.begin(), v.end());
+            std::sort(v.begin(), v.end());
+        });
+    
+        std::cout << duration << '\n';
+    
+        if (v.size() <= 100) {
+            std::cout << v << '\n';
+        }
     }
 }
 
@@ -1950,10 +1975,88 @@ namespace StaticInBlock {
     }
 }
 
+namespace Kadane {
+    // CLRS 4.1-5
+    // Iter must be a forward iterator. Elements msut support general arithmetic and comparison operators.
+    // Returns a tuple (max_begin, max_end, max_sum), where [max_begin, max_end) is the maximum subarray, and max_sum is its sum.
+    // !If the input array is empty, behavior is undefined!
+    template<typename Iter>
+    auto max_sub_array(Iter begin, Iter end) {
+        assert(begin != end);
+        
+        // "Global" maximum
+        auto max_begin = begin;
+        auto max_end = begin;
+        auto max_sum = *begin;
+        
+        // "Current" maximum (maximum subarray ending at current value of c_max_end)
+        auto c_max_begin = max_begin;
+        auto c_max_end = max_end;
+        auto c_max_sum = max_sum;
+        
+        while (++c_max_end != end) {
+            auto sum_to_c_max_end = c_max_sum + *c_max_end;
+            
+            if (*c_max_end > sum_to_c_max_end) {
+                c_max_sum = *c_max_end;
+                c_max_begin = c_max_end;
+            }
+            else {
+                c_max_sum = sum_to_c_max_end;
+            }
+            
+            if (c_max_sum > max_sum) {
+                max_begin = c_max_begin;
+                max_end = c_max_end;
+                max_sum = c_max_sum;
+            }
+        }
+        
+        // Drop leading zeros
+        while (max_begin != max_end && max_sum + *max_begin == max_sum) {
+            ++max_begin;
+        }
+        // Increment max_end to comply with [begin, end) iterators contract
+        ++max_end;
+        return std::make_tuple(max_begin, max_end, max_sum);
+    }
+    
+    template<typename Container, typename Iter, typename T>
+    void print(const Container& c, std::tuple<Iter, Iter, T> max_sub_array) {
+        std::cout << '('
+                  << std::get<0>(max_sub_array) - c.begin() << ", "
+                  << std::get<1>(max_sub_array) - c.begin() - 1 << ", "
+                  << std::get<2>(max_sub_array)
+                  << ")\n";
+    }
+    
+    void main() {
+        const std::vector<int> v1{-13, -3, -25, 20, -3, -16, -23, 18, 20, -7, 12, -5, -22, 15, -4, 7};
+        print(v1, max_sub_array(v1.begin(), v1.end()));
+        
+        const std::vector<int> v2{-13, -3, -25, -4, -7};
+        print(v2, max_sub_array(v2.begin(), v2.end()));
+        
+        const std::vector<int> v3{3, 2, 1, 0, 0, 25};
+        print(v3, max_sub_array(v3.begin(), v3.end()));
+        
+        const std::vector<int> v4{0, 0, 0, 12, -10, 11, 0, 0, 0};
+        print(v4, max_sub_array(v4.begin(), v4.end()));
+        
+        const std::vector<int> v5{0, 0, 0, 0};
+        print(v5, max_sub_array(v5.begin(), v5.end()));
+        
+        const std::vector<int> v6{0, 0, -1, 0, 0, 1};
+        print(v6, max_sub_array(v6.begin(), v6.end()));
+    }
+}
+
 int main(const int argc, const char* argv[]) {
 //    CountSortTests::versus();
 //    CountSortTests::sort_anything();
 //    MapExperiments::main();
 //    Newton::main();
-    StaticInBlock::main();
+//    StaticInBlock::main();
+    MergeSort::main();
+//    Kadane::main();
 }
