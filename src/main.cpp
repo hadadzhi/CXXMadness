@@ -1859,7 +1859,7 @@ namespace Newton {
 }
 
 namespace MergeSort {
-    constexpr size_t InsertionSortThreshold = 32;
+    constexpr size_t InsertionSortThreshold = 46;
     
     // Fallback to this if array length is lte InsertionSortThreshold
     // Generally the best algorithm for small arrays
@@ -1894,7 +1894,7 @@ namespace MergeSort {
     void merge_sort(Iter begin, Iter end) {
         const auto length = std::distance(begin, end);
         
-        if (length <= 46) {
+        if (length <= InsertionSortThreshold) {
             insertion_sort(begin, end);
             return;
         }
