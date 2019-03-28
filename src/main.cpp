@@ -584,7 +584,7 @@ namespace CXX14 {
 
 //#define PAIN_AND_SUFFERING
 #ifdef PAIN_AND_SUFFERING
-// Here is one reason the use "Clang with Microsoft CodeGen" for debug
+// Here is one reason to use "Clang with Microsoft CodeGen" for debug
 namespace PortabilityIsFun {
     template<typename T>
     struct S {
@@ -2091,35 +2091,49 @@ namespace FloatingPointMadness {
         return v;
     }
     
+    // Different ways to compare floats
     template<typename T>
     bool eq(T a, T b) {
         if (a == b) { return true; } // Shortcut, handles infinities
+        if (a - b == 0) { return true; } // Shortcut if subnormals are disabled
         if (std::isnan(a) || std::isnan(b)) { return false; } // NaN != anything, including itself
+        if (std::signbit(a) != std::signbit(b)) { return false; } // Different signs
+    
+        const union { T f; int64_t i; } ia = {a};
+        const union { T f; int64_t i; } ib = {b};
+        // This (ia.i) is undefined behavior in C++, but YOLO
+        if (std::abs(ia.i - ib.i) <= 1) { return true; } // 0..1 ULP difference
+        
+        const auto d = std::abs(a - b); // Note: debugging shows that by this time the difference is almost always 1..5 * epsilon
+        if (d < std::numeric_limits<T>::min()) { return true; } // Subnormal difference => equal
+        
         const auto r = a / b;
-        if (std::signbit(r)) { return false; } // Different signs
-        return std::abs(1 - r) <= std::numeric_limits<T>::epsilon();
+        if (std::abs(1 - r) < std::numeric_limits<T>::epsilon()) { return true; } // Relation within an epsilon of 1 => equal
+        
+        return false;
     }
     
     void main() {
         using T = float;
         
         const auto c1 = C<T>(T(2), T(3));
-        const auto v = make_data(100'000'000, T(1));
+        const auto v = make_data(100'000'000, T(10e10));
         
-        size_t count_failed = 0;
+        size_t neq_count = 0;
+        
         
         auto t = NiceFunctions::time([&]() {
             for (auto c2 : v) {
                 auto p1 = mul3(c1, c2);
                 auto p2 = mul4(c1, c2);
                 if (!(eq(p1.re, p2.re) && eq(p1.im, p2.im))) {
-                    ++count_failed;
+                    ++neq_count;
                 }
             }
         });
         
-        std::cout << "failures: " << count_failed
-                  << " (" << std::lround(count_failed * 100.0 / v.size()) << "%)\n"
+        std::cout << "neq: " << neq_count
+                  << " (" << std::lround(neq_count * 100.0 / v.size()) << "%)\n"
                   << t / 10e6 << "ms"
                   << '\n';
     }
