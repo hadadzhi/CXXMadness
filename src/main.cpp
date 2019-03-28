@@ -545,7 +545,7 @@ namespace CXX14 {
         println(min(42, 9'000'000));
         println(1, "2", '3');
         
-        i_am_deprecated(); // Issues a warning
+        //i_am_deprecated(); // Issues a warning
         
         println(pi<int>);
         println(pi<float>);
@@ -1913,15 +1913,15 @@ namespace MergeSort {
         if (v.size() <= 100) {
             std::cout << v << '\n';
         }
-    
+        
         int64_t duration = time([&]() {
 //            merge_sort(v.begin(), v.end());
 //            std::stable_sort(v.begin(), v.end());
             std::sort(v.begin(), v.end());
         });
-    
+        
         std::cout << duration << '\n';
-    
+        
         if (v.size() <= 100) {
             std::cout << v << '\n';
         }
@@ -2051,12 +2051,87 @@ namespace Kadane {
     }
 }
 
+namespace FloatingPointMadness {
+    template<typename T>
+    struct C {
+        T re;
+        T im;
+        
+        C(T re, T im) : re{re}, im{im} {}
+    };
+    
+    template<typename T>
+    constexpr C<T> mul4(C<T> a, C<T> b) {
+        const T re = a.re * b.re - a.im * b.im;
+        const T im = a.im * b.re + a.re * b.im;
+        return {re, im};
+    }
+    
+    template<typename T>
+    constexpr C<T> mul3(C<T> a, C<T> b) {
+        const T p1 = a.re * b.re;
+        const T p2 = a.im * b.im;
+        const T p3 = (a.re + a.im) * (b.re + b.im);
+        a.re = p1 - p2;
+        a.im = p3 - p2 - p1;
+        return a;
+    }
+    
+    template<typename T>
+    std::vector<C<T>> make_data(size_t length, T m) {
+        auto rnd = std::bind(
+                std::uniform_real_distribution<T>(-m, m),
+                std::default_random_engine(std::random_device()())
+        );
+        std::vector<C<T>> v;
+        v.reserve(length);
+        while (length--) {
+            v.emplace_back(rnd(), rnd());
+        }
+        return v;
+    }
+    
+    template<typename T>
+    bool eq(T a, T b) {
+        if (a == b) { return true; } // Shortcut, handles infinities
+        if (std::isnan(a) || std::isnan(b)) { return false; } // NaN != anything, including itself
+        const auto r = a / b;
+        if (std::signbit(r)) { return false; } // Different signs
+        return std::abs(1 - r) <= std::numeric_limits<T>::epsilon();
+    }
+    
+    void main() {
+        using T = float;
+        
+        const auto c1 = C<T>(T(2), T(3));
+        const auto v = make_data(100'000'000, T(1));
+        
+        size_t count_failed = 0;
+        
+        auto t = NiceFunctions::time([&]() {
+            for (auto c2 : v) {
+                auto p1 = mul3(c1, c2);
+                auto p2 = mul4(c1, c2);
+                if (!(eq(p1.re, p2.re) && eq(p1.im, p2.im))) {
+                    ++count_failed;
+                }
+            }
+        });
+        
+        std::cout << "failures: " << count_failed
+                  << " (" << std::lround(count_failed * 100.0 / v.size()) << "%)\n"
+                  << t / 10e6 << "ms"
+                  << '\n';
+    }
+}
+
 int main(const int argc, const char* argv[]) {
 //    CountSortTests::versus();
 //    CountSortTests::sort_anything();
 //    MapExperiments::main();
 //    Newton::main();
 //    StaticInBlock::main();
-    MergeSort::main();
+//    MergeSort::main();
 //    Kadane::main();
+    FloatingPointMadness::main();
 }
