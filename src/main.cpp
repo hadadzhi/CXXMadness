@@ -2098,7 +2098,7 @@ namespace FloatingPointMadness {
         if (a - b == 0) { return true; } // Shortcut if subnormals are disabled
         if (std::isnan(a) || std::isnan(b)) { return false; } // NaN != anything, including itself
         if (std::signbit(a) != std::signbit(b)) { return false; } // Different signs
-    
+        
         const union { T f; int64_t i; } ia = {a};
         const union { T f; int64_t i; } ib = {b};
         // This (ia.i) is undefined behavior in C++, but YOLO
@@ -2120,7 +2120,6 @@ namespace FloatingPointMadness {
         const auto v = make_data(100'000'000, T(10e10));
         
         size_t neq_count = 0;
-        
         
         auto t = NiceFunctions::time([&]() {
             for (auto c2 : v) {
