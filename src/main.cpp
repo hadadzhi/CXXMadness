@@ -1465,8 +1465,12 @@ namespace NiceFunctions {
     }
     
     void main() {
-        // ipow "test"
-        for (auto f : {ipow_r, ipow}) {
+        using pow_t = std::function<int64_t(int64_t, int)>;
+        
+        const pow_t f1 = [](int64_t n, int k) { return ipow_r(n, k); };
+        const pow_t f2 = [](int64_t n, int k) { return ipow_tr(n, k); };
+        
+        for (auto f : {f1, f2}) {
             std::cout << f(2, 62) << '\n';
             std::cout << f(10, 18) << '\n';
             std::cout << f(12, 3) << '\n';
@@ -2114,7 +2118,7 @@ namespace FloatingPointMadness {
     }
     
     void main() {
-        using T = float;
+        using T = double;
         
         const auto c1 = C<T>(T(2), T(3));
         const auto v = make_data(100'000'000, T(10e10));
