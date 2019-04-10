@@ -6,8 +6,8 @@
 
 namespace TCXXPL {
     // What am I doing?
-    class StupidString {
-    public:
+    struct StupidString {
+
         StupidString(const char* str);
         
         StupidString(const StupidString& rhs);
@@ -23,6 +23,7 @@ namespace TCXXPL {
         ~StupidString();
 
     private:
+
         static constexpr size_t short_limit = 16;
         
         size_t size;
@@ -31,6 +32,7 @@ namespace TCXXPL {
 
         void copy_construct(const StupidString& rhs) noexcept;
         void move_construct(StupidString& rhs) noexcept;
+    
     };
 
     bool operator==(const StupidString& l, const StupidString& r);

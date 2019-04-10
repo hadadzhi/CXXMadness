@@ -1571,28 +1571,36 @@ namespace CountSort {
     // Integral element type specialization
     template<typename ElemType>
     struct Counter<ElemType, true> {
-        int m_count = 0;
+
+        auto count() { return m_count; }
         
-        int count() { return m_count; }
+        void slurp(ElemType) { ++m_count; }
         
-        void slurp(ElemType& el) { ++m_count; }
-        
-        void barf(ElemType& el, int min) { el = m_count - min; }
+        void barf(ElemType& el, size_t j, int32_t min) { el = (int32_t) j + min; }
+
+    private:
+
+        int64_t m_count = 0;
+    
     };
     
     // Any element type specialization
     template<typename ElemType>
     struct Counter<ElemType, false> {
-        std::stack<ElemType> stack;
+
+        auto count() { return m_stack.size(); }
         
-        auto count() { return stack.size(); }
+        void slurp(ElemType& el) { m_stack.push(std::move(el)); }
         
-        void slurp(ElemType& el) { stack.push(std::move(el)); }
-        
-        void barf(ElemType& el, int min_unused) {
-            el = std::move(stack.top());
-            stack.pop();
+        void barf(ElemType& el, int32_t, int32_t) {
+            el = std::move(m_stack.top());
+            m_stack.pop();
         }
+
+    private:
+
+        std::stack<ElemType> m_stack;
+
     };
     
     // Iter must be bidirectional (support the decrement operator).
@@ -1601,15 +1609,14 @@ namespace CountSort {
     //
     // min/max is the minimum/maximum value that MapToInt returns.
     // If not specified or invalid (max <= min), performs additional linear search.
-    // (max - min + 1) must not overflow and must fit into a size_t.
     //
     // The sort is stable (preserves the order of elements with the same key).
-    template<typename Iter, typename MapToInt, typename ElemType = typename std::iterator_traits<Iter>::value_type>
-    void count_sort(Iter begin,
-                    Iter end,
-                    MapToInt map_to_int,
-                    int min = std::numeric_limits<int>::min(),
-                    int max = std::numeric_limits<int>::min()) {
+    template<
+        typename Iter, 
+        typename MapToInt,
+        typename ElemType = typename std::iterator_traits<Iter>::value_type
+    >
+    void count_sort(Iter begin, Iter end, MapToInt map_to_int, int32_t min, int32_t max) {
         
         // input array is empty
         if (begin == end) {
@@ -1632,25 +1639,18 @@ namespace CountSort {
         if (max == min) {
             return;
         }
-        
-        // check constraints
-        if (max - min < 0) {
-            throw std::overflow_error("max - min");
-        }
-        if (max - min == std::numeric_limits<int>::max()) {
-            throw std::invalid_argument("max - min + 1 won't fit into an int");
-        }
-        
-        std::vector<Counter<ElemType>> counters(static_cast<size_t>(max - min + 1));
+
+        const size_t diff = (int64_t) max - min;
+        std::vector<Counter<ElemType>> counters(diff + 1);
         
         Iter it = begin;
         for (; it != end; ++it) {
             ElemType& e = *it;
-            counters[map_to_int(e) - min].slurp(e);
+            counters[(int64_t) map_to_int(e) - min].slurp(e);
         }
         // remember that `it` is at `end`
         
-        auto j = counters.size();
+        size_t j = counters.size();
         while (it != begin) {
             // Skip empty
             auto count = counters[--j].count();
@@ -1658,31 +1658,29 @@ namespace CountSort {
                 count = counters[--j].count();
             }
             
-            // The initial order of values with the same key is preserved by the accumulator
+            // The initial order of values with the same key is preserved by the counter
             while (count-- > 0) {
-                counters[j].barf(*(--it), min);
+                counters[j].barf(*(--it), j, min);
             }
         }
     }
     
-    // Iter must be bidirectional (support the decrement operator).
-    // Iter's value type must be integral.
-    //
-    // min/max is the minimum/maximum value contained in the input array.
-    // If not specified or invalid (max <= min), performs additional linear search.
-    // (max - min + 1) must not overflow and must fit into a size_t.
-    //
-    // The sort is stable (preserves the order of elements with the same key).
-    template<typename Iter, typename ElemType = typename std::iterator_traits<Iter>::value_type>
-    void count_sort(Iter begin,
-                    Iter end,
-                    int min = std::numeric_limits<int>::min(),
-                    int max = std::numeric_limits<int>::min()) {
-        static_assert(
-                std::is_integral<typename std::iterator_traits<Iter>::value_type>::value,
-                "Iter's value type must be integral (use overload that takes a mapping function)"
-        );
-        count_sort(begin, end, [](ElemType e) { return static_cast<int>(e); }, min, max);
+    // Overload for integral element type
+    template<typename Iter, typename E = typename std::iterator_traits<Iter>::value_type>
+    typename std::enable_if_t<std::is_integral<E>::value> count_sort(Iter begin, Iter end, int32_t min, int32_t max) {
+        count_sort(begin, end, [](E x) { return x; }, min, max);
+    }
+
+    // This overload for integral element type finds min/max
+    template<typename Iter, typename E = typename std::iterator_traits<Iter>::value_type>
+    typename std::enable_if_t<std::is_integral<E>::value> count_sort(Iter begin, Iter end) {
+        count_sort(begin, end, [](E x) { return x; }, 0, 0);
+    }
+
+    // This overload finds min/max
+    template<typename Iter, typename MapToInt>
+    void count_sort(Iter begin, Iter end, MapToInt map_to_int) {
+        count_sort(begin, end, map_to_int, 0, 0);
     }
 }
 
@@ -1696,14 +1694,10 @@ namespace CountSortTests {
         
         constexpr elem_type min = -100000;
         constexpr elem_type max = 100000;
-        constexpr size_t count = 10'000'000/*100'000'000*/;
+        constexpr size_t count = 10'000'000;
         
         std::function<void(array_type*)> l_countsort = [=](array_type* pv) {
-            count_sort(begin(*pv), end(*pv), min, max);
-        };
-        
-        std::function<void(array_type*)> l_quicksort = [=](array_type* pv) {
-            Quicksort::quicksort(*pv);
+            count_sort(std::begin(*pv), std::end(*pv), min, max);
         };
         
         std::function<void(array_type*)> l_stdsort = [=](array_type* pv) {
@@ -1712,10 +1706,8 @@ namespace CountSortTests {
         
         auto v1 = make_rnd_vals<elem_type>(count, min, max);
         auto v2 = v1;
-        auto v3 = v1;
-        for (auto& t : {std::make_tuple(&v1, l_countsort),
-                        std::make_tuple(&v2, l_quicksort),
-                        std::make_tuple(&v3, l_stdsort)}) {
+        for (auto& t : { std::make_tuple(&v1, l_countsort),
+                         std::make_tuple(&v2, l_stdsort)    }) {
             auto pv = std::get<0>(t);
             auto f = std::get<1>(t);
             
@@ -1779,10 +1771,10 @@ namespace CountSortTests {
         using namespace CountSort;
         
         std::vector<Task> ts;
-        ts.emplace_back(42, "One!!");
-        ts.emplace_back(100500, "One");
-        ts.emplace_back(100500, "Two");
-        ts.emplace_back(42, "Two!!");
+        ts.emplace_back(42, "One");
+        ts.emplace_back(100500, "Three");
+        ts.emplace_back(100500, "Four");
+        ts.emplace_back(42, "Two");
         
         for (const auto& t : ts) {
             std::cout << '{' << t.priority << ' ' << t.name << "}, ";
@@ -1790,7 +1782,7 @@ namespace CountSortTests {
         std::cout << '\n';
         
         std::cerr << '\n';
-        count_sort(begin(ts), end(ts), [](const Task& p) { return p.priority; });
+        count_sort(begin(ts), end(ts), [](const Task& p) { return p.priority; }, 42, 100500);
         
         // verify sort stability
         for (const auto& t : ts) {
@@ -1798,17 +1790,6 @@ namespace CountSortTests {
         }
         std::cout << '\n';
     }
-    
-    // Must not compile
-//    void failure_modes() {
-//        using namespace CountSort;
-//
-//        std::vector<double> ds;
-//        count_sort(begin(ds), end(ds));
-//
-//        std::vector<float> fs;
-//        count_sort(begin(fs), end(fs));
-//    }
 }
 
 namespace MapExperiments {
@@ -2143,12 +2124,12 @@ namespace FloatingPointMadness {
 }
 
 int main(const int argc, const char* argv[]) {
-//    CountSortTests::versus();
-//    CountSortTests::sort_anything();
+    CountSortTests::versus();
+    CountSortTests::sort_anything();
 //    MapExperiments::main();
 //    Newton::main();
 //    StaticInBlock::main();
 //    MergeSort::main();
 //    Kadane::main();
-    FloatingPointMadness::main();
+//    FloatingPointMadness::main();
 }
